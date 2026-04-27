@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { fetchDIDEvents, DIDClaimEvent, APIResponse } from '../lib/api';
+import { DIDClaimEvent, fetchExplorerSBTClaims } from '../lib/api';
 
 // Format address to show first 6 and last 4 characters
 const formatAddress = (address: string) => {
@@ -51,13 +51,27 @@ export default function SbtClaimsPage() {
     async function loadEvents() {
       try {
         setLoading(true);
-        const response = await fetchDIDEvents({ limit: 100 });
-        setClaims(response.data);
+        const rows = await fetchExplorerSBTClaims(100);
+        // Adapt verification-backend shape to legacy DIDClaimEvent shape so
+        // the existing table render keeps working without a rewrite.
+        const adapted: DIDClaimEvent[] = rows.map((r, i) => ({
+          id: i,
+          registry_id: '',
+          user_address: r.user_address,
+          did_type: r.did_type,
+          user_did_id: '',
+          nft_id: r.nft_id ?? '',
+          checkpoint_sequence_number: 0,
+          transaction_digest: r.transaction_hash,
+          timestamp_ms: Date.parse(r.created_at),
+          event_index: 0,
+        }));
+        setClaims(adapted);
         setError(null);
       } catch (err) {
-        console.error('Failed to fetch events:', err);
-        setError('Failed to load events from database');
-        setClaims([]); // Show empty if API fails
+        console.error('Failed to fetch sbt claims:', err);
+        setError('Failed to load claims from verification backend');
+        setClaims([]);
       } finally {
         setLoading(false);
       }

@@ -158,3 +158,39 @@ export async function fetchExplorerPartners(): Promise<ExplorerPartner[]> {
     if (!res.ok) throw new Error(`Failed to fetch partners: ${res.status}`);
     return res.json();
 }
+
+export interface ExplorerSBTClaim {
+    user_address: string;
+    nft_id: string | null;
+    did_type: string;
+    title: string;
+    transaction_hash: string;
+    sui_explorer_url: string | null;
+    blob_id: string | null;
+    created_at: string;
+}
+
+export interface ExplorerDIDReusage {
+    user_wallet: string;
+    nft_id: string;
+    client_id: string;
+    partner_name: string | null;
+    did_type: number;
+    completed_at: string;
+}
+
+export async function fetchExplorerSBTClaims(limit = 100): Promise<ExplorerSBTClaim[]> {
+    const res = await fetch(`${VERIFICATION_BACKEND_URL}/api/explorer/sbt-claims?limit=${limit}`, {
+        cache: 'no-store',
+    });
+    if (!res.ok) throw new Error(`Failed to fetch sbt claims: ${res.status}`);
+    return res.json();
+}
+
+export async function fetchExplorerDIDReusage(limit = 100): Promise<ExplorerDIDReusage[]> {
+    const res = await fetch(`${VERIFICATION_BACKEND_URL}/api/explorer/did-reusage?limit=${limit}`, {
+        cache: 'no-store',
+    });
+    if (!res.ok) throw new Error(`Failed to fetch did reusage: ${res.status}`);
+    return res.json();
+}

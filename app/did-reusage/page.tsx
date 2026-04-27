@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { fetchSettlements, SettlementRecord } from '../lib/api';
+import { SettlementRecord, fetchExplorerDIDReusage } from '../lib/api';
 
 // Mock data removed - using real API data only
 
@@ -26,21 +26,38 @@ export default function DidReusagePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadSettlements() {
+    async function loadReusage() {
       try {
         setLoading(true);
-        const response = await fetchSettlements({ limit: 100 });
-        setSettlements(response.data);
+        const rows = await fetchExplorerDIDReusage(100);
+        // Adapt verification-backend reusage shape to legacy SettlementRecord
+        // shape so existing table render works without rewrite.
+        const adapted: SettlementRecord[] = rows.map((r, i) => ({
+          id: i,
+          enclave_tx_digest: '',
+          did_verified_id: r.nft_id,
+          did_nft_name: null,
+          protocol_uid: 0,
+          protocol_name: r.partner_name ?? r.client_id,
+          protocol_address: null,
+          user_address: r.user_wallet,
+          payment_tx_digest: '',
+          settlement_amount: 0,
+          timestamp: Date.parse(r.completed_at),
+          created_at: r.completed_at,
+          status: 'completed',
+        }));
+        setSettlements(adapted);
         setError(null);
       } catch (err) {
-        console.error('Failed to fetch settlements:', err);
-        setError('Failed to load settlement data');
+        console.error('Failed to fetch reusage:', err);
+        setError('Failed to load DID reusage data');
         setSettlements([]);
       } finally {
         setLoading(false);
       }
     }
-    loadSettlements();
+    loadReusage();
   }, []);
 
   return (
