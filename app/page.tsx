@@ -9,6 +9,7 @@ import {
   fetchDIDEvents, DIDClaimEvent,
   fetchSettlements, SettlementRecord,
   fetchExplorerStats, fetchDIDTimeseries, fetchReuseTimeseries,
+  fetchExplorerSBTClaims, fetchExplorerDIDReusage,
   ExplorerStats, ExplorerTimePoint,
 } from './lib/api';
 
@@ -176,27 +177,52 @@ export default function ExplorerPage() {
 
   useEffect(() => {
     async function loadData() {
+      // Recent rows come from verification-backend now (was did-explorer +
+      // settlement API). Adapt to legacy types so table render is unchanged.
       try {
-        // Fetch recent SBT claims for table
-        const eventsResponse = await fetchDIDEvents({ limit: 4 });
-        setSbtClaims(eventsResponse.data);
-
-        // Fetch ALL events for chart data
-        const allEventsResponse = await fetchDIDEvents({ limit: 10000 });
-        setAllEvents(allEventsResponse.data);
-
-        // Fetch recent settlements for table
-        const settlementsResponse = await fetchSettlements({ limit: 4 });
-        setSettlements(settlementsResponse.data);
-
-        // Fetch ALL settlements for chart data
-        const allSettlementsResponse = await fetchSettlements({ limit: 10000 });
-        setAllSettlements(allSettlementsResponse.data);
+        const recentClaims = await fetchExplorerSBTClaims(4);
+        const adapted: DIDClaimEvent[] = recentClaims.map((r, i) => ({
+          id: i,
+          registry_id: '',
+          user_address: r.user_address,
+          did_type: r.did_type,
+          user_did_id: '',
+          nft_id: r.nft_id ?? '',
+          checkpoint_sequence_number: 0,
+          transaction_digest: r.transaction_hash,
+          timestamp_ms: Date.parse(r.created_at),
+          event_index: 0,
+        }));
+        setSbtClaims(adapted);
+        setAllEvents(adapted);
       } catch (err) {
-        console.error('Failed to fetch data:', err);
+        console.error('Failed to fetch sbt claims:', err);
         setSbtClaims([]);
-        setSettlements([]);
         setAllEvents([]);
+      }
+
+      try {
+        const reuseRows = await fetchExplorerDIDReusage(4);
+        const adaptedSettlements: SettlementRecord[] = reuseRows.map((r, i) => ({
+          id: i,
+          enclave_tx_digest: '',
+          did_verified_id: r.nft_id,
+          did_nft_name: null,
+          protocol_uid: 0,
+          protocol_name: r.partner_name ?? r.client_id,
+          protocol_address: null,
+          user_address: r.user_wallet,
+          payment_tx_digest: '',
+          settlement_amount: 0,
+          timestamp: Date.parse(r.completed_at),
+          created_at: r.completed_at,
+          status: 'completed',
+        }));
+        setSettlements(adaptedSettlements);
+        setAllSettlements(adaptedSettlements);
+      } catch (err) {
+        console.error('Failed to fetch did reusage:', err);
+        setSettlements([]);
         setAllSettlements([]);
       }
 
