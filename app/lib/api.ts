@@ -100,3 +100,61 @@ export async function fetchSettlements(
 
     return response.json();
 }
+
+// ============================================
+// Explorer stats (verification-backend, public)
+// ============================================
+
+export interface ExplorerStats {
+    total_users: number;
+    total_dids_issued: number;
+    total_dids_reused: number;
+    total_sbt_claims: number;
+    protocols_integrated: number;
+}
+
+export interface ExplorerTimePoint {
+    date: string;
+    count: number;
+}
+
+export interface ExplorerPartner {
+    client_id: string;
+    name: string;
+    created_at: string;
+}
+
+const VERIFICATION_BACKEND_URL =
+    process.env.NEXT_PUBLIC_VERIFICATION_BACKEND_URL || 'http://localhost:8000';
+
+export async function fetchExplorerStats(): Promise<ExplorerStats> {
+    const res = await fetch(`${VERIFICATION_BACKEND_URL}/api/explorer/stats`, {
+        cache: 'no-store',
+    });
+    if (!res.ok) throw new Error(`Failed to fetch explorer stats: ${res.status}`);
+    return res.json();
+}
+
+export async function fetchDIDTimeseries(days = 30): Promise<ExplorerTimePoint[]> {
+    const res = await fetch(`${VERIFICATION_BACKEND_URL}/api/explorer/dids/timeseries?days=${days}`, {
+        cache: 'no-store',
+    });
+    if (!res.ok) throw new Error(`Failed to fetch DID timeseries: ${res.status}`);
+    return res.json();
+}
+
+export async function fetchReuseTimeseries(days = 30): Promise<ExplorerTimePoint[]> {
+    const res = await fetch(`${VERIFICATION_BACKEND_URL}/api/explorer/reuses/timeseries?days=${days}`, {
+        cache: 'no-store',
+    });
+    if (!res.ok) throw new Error(`Failed to fetch reuse timeseries: ${res.status}`);
+    return res.json();
+}
+
+export async function fetchExplorerPartners(): Promise<ExplorerPartner[]> {
+    const res = await fetch(`${VERIFICATION_BACKEND_URL}/api/explorer/partners`, {
+        cache: 'no-store',
+    });
+    if (!res.ok) throw new Error(`Failed to fetch partners: ${res.status}`);
+    return res.json();
+}

@@ -5,7 +5,12 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { fetchDIDEvents, DIDClaimEvent, fetchSettlements, SettlementRecord } from './lib/api';
+import {
+  fetchDIDEvents, DIDClaimEvent,
+  fetchSettlements, SettlementRecord,
+  fetchExplorerStats, fetchDIDTimeseries, fetchReuseTimeseries,
+  ExplorerStats, ExplorerTimePoint,
+} from './lib/api';
 
 // Helper function to process DID events into chart data
 const processDIDEventsByDate = (events: DIDClaimEvent[]) => {
@@ -164,6 +169,9 @@ export default function ExplorerPage() {
   const [settlements, setSettlements] = useState<SettlementRecord[]>([]);
   const [allEvents, setAllEvents] = useState<DIDClaimEvent[]>([]);
   const [allSettlements, setAllSettlements] = useState<SettlementRecord[]>([]);
+  const [stats, setStats] = useState<ExplorerStats | null>(null);
+  const [didTimeseries, setDidTimeseries] = useState<ExplorerTimePoint[]>([]);
+  const [reuseTimeseries, setReuseTimeseries] = useState<ExplorerTimePoint[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -190,6 +198,22 @@ export default function ExplorerPage() {
         setSettlements([]);
         setAllEvents([]);
         setAllSettlements([]);
+      }
+
+      // Aggregate stats from verification-backend (Postgres source of truth).
+      // Independent of did-explorer event reads above so failure here does
+      // not block the activity feed and vice versa.
+      try {
+        const [s, dts, rts] = await Promise.all([
+          fetchExplorerStats(),
+          fetchDIDTimeseries(30),
+          fetchReuseTimeseries(30),
+        ]);
+        setStats(s);
+        setDidTimeseries(dts);
+        setReuseTimeseries(rts);
+      } catch (err) {
+        console.error('Failed to fetch explorer stats:', err);
       } finally {
         setLoading(false);
       }
@@ -197,14 +221,20 @@ export default function ExplorerPage() {
     loadData();
   }, []);
 
-  // Process chart data from real API data
-  const didIssuedData = processDIDEventsByDate(allEvents);
-  const didReusedData = processSettlementsByDate(allSettlements);
+  // Charts: prefer verification-backend timeseries when available, fall back
+  // to did-explorer event aggregation if the backend stats call failed.
+  const didIssuedData = didTimeseries.length > 0
+    ? didTimeseries.map(p => ({ date: p.date, value: p.count }))
+    : processDIDEventsByDate(allEvents);
+  const didReusedData = reuseTimeseries.length > 0
+    ? reuseTimeseries.map(p => ({ date: p.date, value: p.count }))
+    : processSettlementsByDate(allSettlements);
 
-  // Calculate stats
-  const totalDIDIssued = allEvents.length;
-  const totalReused = allSettlements.length;
-  const uniqueUsers = new Set(allEvents.map(e => e.user_address)).size;
+  // Stats: prefer backend aggregates, fall back to derived counts.
+  const totalDIDIssued = stats?.total_dids_issued ?? allEvents.length;
+  const totalReused = stats?.total_dids_reused ?? allSettlements.length;
+  const uniqueUsers = stats?.total_users ?? new Set(allEvents.map(e => e.user_address)).size;
+  const protocolsIntegrated = stats?.protocols_integrated ?? 0;
   const avgDailyReusage = didReusedData.length > 0
     ? Math.round(totalReused / didReusedData.length)
     : 0;
@@ -333,8 +363,8 @@ export default function ExplorerPage() {
               </div>
             </div>
             <div className="flex items-baseline gap-2">
-              <p className="text-3xl font-bold text-charcoal-text">3</p>
-              <span className="text-xs font-medium text-charcoal-text/60">0%</span>
+              <p className="text-3xl font-bold text-charcoal-text">{protocolsIntegrated}</p>
+              <span className="text-xs font-medium text-charcoal-text/60">active</span>
             </div>
             <p className="text-xs text-charcoal-text/60 mt-1">past 30 days</p>
           </div>
