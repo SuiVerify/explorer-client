@@ -317,7 +317,7 @@ export default function ExplorerPage() {
             <div className="flex items-center gap-4 flex-shrink-0">
               <div className="text-right">
                 <div className="text-xs text-charcoal-text/60 uppercase tracking-wide font-semibold">Network</div>
-                <div className="text-sm font-bold text-charcoal-text">Testnet</div>
+                <div className="text-sm font-bold text-charcoal-text">Mainnet</div>
               </div>
             </div>
           </div>
