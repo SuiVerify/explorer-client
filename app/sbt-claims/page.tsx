@@ -194,11 +194,9 @@ export default function SbtClaimsPage() {
                 <thead>
                   <tr className="bg-primary/5 border-b-2 border-primary/20">
                     <th className="text-left py-4 px-6 text-xs font-semibold text-charcoal-text/70 uppercase tracking-wider">ID</th>
-                    <th className="text-left py-4 px-6 text-xs font-semibold text-charcoal-text/70 uppercase tracking-wider">Registry ID</th>
                     <th className="text-left py-4 px-6 text-xs font-semibold text-charcoal-text/70 uppercase tracking-wider">User Address</th>
                     <th className="text-left py-4 px-6 text-xs font-semibold text-charcoal-text/70 uppercase tracking-wider">DID Type</th>
                     <th className="text-left py-4 px-6 text-xs font-semibold text-charcoal-text/70 uppercase tracking-wider">NFT ID</th>
-                    <th className="text-left py-4 px-6 text-xs font-semibold text-charcoal-text/70 uppercase tracking-wider">Checkpoint</th>
                     <th className="text-left py-4 px-6 text-xs font-semibold text-charcoal-text/70 uppercase tracking-wider">Transaction</th>
                     <th className="text-left py-4 px-6 text-xs font-semibold text-charcoal-text/70 uppercase tracking-wider">Timestamp</th>
                   </tr>
@@ -208,22 +206,6 @@ export default function SbtClaimsPage() {
                     <tr key={claim.transaction_digest} className="hover:bg-primary/5 transition-colors">
                       <td className="py-4 px-6">
                         <span className="text-sm font-bold text-charcoal-text">{index + 1}</span>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-mono text-primary hover:text-primary-dark cursor-pointer font-semibold">
-                            {formatAddress(claim.registry_id)}
-                          </span>
-                          <button
-                            onClick={() => copyToClipboard(claim.registry_id)}
-                            className="text-charcoal-text/40 hover:text-primary transition-colors"
-                            title="Copy Registry ID"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                            </svg>
-                          </button>
-                        </div>
                       </td>
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-2">
@@ -261,9 +243,6 @@ export default function SbtClaimsPage() {
                             </svg>
                           </button>
                         </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className="text-sm text-charcoal-text font-medium">{claim.checkpoint_sequence_number}</span>
                       </td>
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-2">
